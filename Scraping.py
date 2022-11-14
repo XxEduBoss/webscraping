@@ -1,67 +1,56 @@
 import requests
 import bs4
 
-lista_posiciones = ["player-position pos_1", "player-position pos_2", "player-position pos_3", "player-position pos_4"]
-
 
 def web_scraping():
 
     # Paso 1 --> Tomar el código HTML de la página.
-    html = requests.get("https://www.comuniazo.com/comunio-apuestas/jugadores")
+    html = requests.get("https://www.game.es/VIDEOJUEGOS/PLAYSTATION-4")
 
     # Paso 2 --> Convertir nuestro hmtl en una sopa.
     soup = bs4.BeautifulSoup(html.content)
 
     # Paso 3 --> Crearnos un diccionario con la estructura.
     plantilla = {
-        "posicion": None,
-        "equipo": None,
-        "nombre": None,
-        "puntos_totales": None,
-        "valor": None
+        "Imagen": None,
+        "Nombre": None,
+        "Precio": None,
+        "Puntos": None,
+        "Plataformas": None
     }
 
     # Paso 4 --> Utilizar los métodos de bs4 (Encontrar los datos que quiero obtener).
-    jugadores = soup.find_all("tr", {"class": "btn"})
+    juegos = soup.find_all("article", {"class": "product-carousel-item"})
 
-    lista_jugadores = []
+    lista_juegos = []
 
-    for jugador in jugadores:
+    for juego in juegos:
 
         # Creamos una copia del diccionario plantilla.
-        dic_jugador = plantilla.copy()
+        dic_juegos = plantilla.copy()
 
         # Buscar los campos y asignarlos en el diccionario.
 
+        # IMAGEN
+        dic_juegos["Imagen"] = juego.find("img", {"class": "cover"})["src"]
+
         # NOMBRE
-        dic_jugador["nombre"] = jugador.find("div", {"class": "player"}).strong.text
+        dic_juegos["Nombre"] = juego.find("div", {"class": "product-carousel-item-title u-mb0"}).find("a").text.translate({ord('\r'): ' '}).translate({ord('\n'): ' '}).replace("      ", "").replace("  ", "")
 
-        # POSICION
-        if jugador.find("span", {"class": "player-position pos_1"}) != None:
-            dic_jugador["posicion"] = "PT"
+        # PRECIO
+        dic_juegos["Precio"] = juego.find("span", {"class": "int"}).text + juego.find("span", {"class": "decimal"}).text + juego.find("span", {"class": "currency"}).text
 
-        elif jugador.find("span", {"class": "player-position pos_2"}) != None:
-            dic_jugador["posicion"] = "DFC"
+        # PUNTOS
+        dic_juegos["Puntos"] = juego.find("small", {"class": "text-primary"}).text.replace("Puntos: ", "")
 
-        elif jugador.find("span", {"class": "player-position pos_3"}) != None:
-            dic_jugador["posicion"] = "MC"
+        # PLATAFORMAS
+        dic_juegos["Plataformas"] = juego.find("div", {"class": "product-carousel-item-platform"}).text.translate({ord('\n'): ' '}).replace("4 P", "4, P").replace("5 Xbox One X", "5, Xbox One X").replace("4 X", "4 y X").replace("e X", "e y X").replace("5 X", "5 y X").replace("h P", "h, P")
 
-        else:
-            dic_jugador["posicion"] = "DC"
-
-        # EQUIPO
-        dic_jugador["equipo"] = jugador.find("img", {"class": "team-logo"})["src"]
-
-        # PUNTOS_TOTALES
-        dic_jugador["puntos_totales"] = int(jugador.find_all("td", {"class": "tac"})[0].text)
-
-        # VALOR
-        dic_jugador["valor"] = int(jugador.find_all("td", {"class": "tac"})[6].text.replace(".", ""))
 
         # Añadir el jugador a mi lista de jugadores.
 
-        lista_jugadores.append(jugador)
-        print(dic_jugador)
+        lista_juegos.append(juego)
+        print(dic_juegos)
 
 
 web_scraping()
